@@ -15,7 +15,7 @@ async function getMatchesByAccountId(puuid, indexStart) {
 
   try {
     const response = await axios.get(
-      `https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=5`,
+      `https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=15`,
       {
         headers: {
           "X-Riot-Token": apiKey,
