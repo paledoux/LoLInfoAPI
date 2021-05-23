@@ -1,21 +1,26 @@
-const api = require("./api");
+const axios = require("axios");
+
+const apiKey = process.env.API_KEY;
 
 async function getMatchInfosByMatchId(matchId) {
-  const id = parseInt(matchId, 10);
-  if (id === 0) {
-    throw new Error();
-  }
-
   try {
-    const response = await api.get(`match/v4/matches/${id}`);
+    const response = await axios.get(
+      `https://americas.api.riotgames.com/lol/match/v5/matches/${matchId}`,
+      {
+        headers: {
+          "X-Riot-Token": apiKey,
+        },
+      }
+    );
 
     if (response) {
-      return response.data;
+      return response.data.info;
     }
-  } catch (e) {
     throw new Error();
+  } catch (e) {
+    return null;
+    // throw new Error(e.message);
   }
-  throw new Error();
 }
 
 module.exports = getMatchInfosByMatchId;

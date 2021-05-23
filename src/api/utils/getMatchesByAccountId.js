@@ -1,34 +1,42 @@
-const api = require("./api");
+const axios = require("axios");
+
 const getMatchInfosByMatchId = require("./getMatchInfosByMatchId");
 
-async function getMatchesByAccountId(accoundId, indexStart, indexEnd) {
-  if (accoundId === "") {
+const apiKey = process.env.API_KEY;
+
+async function getMatchesByAccountId(puuid, indexStart) {
+  if (puuid === "") {
     throw new Error();
   }
 
   if (typeof indexStart === "undefined") {
     indexStart = 0;
   }
-  if (typeof indexEnd === "undefined") {
-    indexEnd = 5;
-  }
 
   try {
-    const response = await api.get(
-      `match/v4/matchlists/by-account/${accoundId}?endIndex=${indexEnd}&beginIndex=${indexStart}`
+    const response = await axios.get(
+      `https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=5`,
+      {
+        headers: {
+          "X-Riot-Token": apiKey,
+        },
+      }
     );
 
     if (response) {
-      return Promise.all(
-        response.data.matches.map(async (match) => ({
-          matchInfo: match,
+      const data = Promise.all(
+        response.data.map(async (match) => {
           // championInfo: await getChampionInfosById(match.champion),
-          matchInfoComplete: await getMatchInfosByMatchId(match.gameId),
-        }))
+          const info = await getMatchInfosByMatchId(match);
+
+          return info;
+        })
       );
+
+      return (await data).filter((x) => !!x);
     }
   } catch (e) {
-    throw new Error();
+    throw new Error(e.message);
   }
   throw new Error();
 }

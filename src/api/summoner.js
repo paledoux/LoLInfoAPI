@@ -1,5 +1,7 @@
 const express = require("express");
 
+const client = require("./redis");
+
 const getSummonerInfo = require("./utils/getSummonerInfo");
 const getMatchesByAccountId = require("./utils/getMatchesByAccountId");
 
@@ -27,21 +29,35 @@ router.get("/:summonerName", async (req, res) => {
   }
 
   try {
-    // eslint-disable-next-line no-use-before-define
-    const currentSummoner = await getSummonerInfo(summonerName);
-    const summonerMatches = await getMatchesByAccountId(
-      currentSummoner.accountId,
-      0,
-      10
-    );
+    client.get(summonerName, async (err, summonerInfo) => {
+      if (summonerInfo) {
+        return res.status(200).send(JSON.parse(summonerInfo));
+      }
 
-    return res.send({
-      sunmmoner: currentSummoner,
-      matches: summonerMatches,
+      const currentSummoner = await getSummonerInfo(summonerName);
+      const summonerMatches = await getMatchesByAccountId(
+        currentSummoner.puuid,
+        0
+      );
+
+      const data = {
+        summoner: currentSummoner,
+        matches: summonerMatches,
+      };
+
+      client.setex(summonerName, 300, JSON.stringify(data));
+
+      return res.status(200).send(data);
     });
   } catch (err) {
-    return res.sendStatus(404);
+    if (process.env.NODE_ENV === "development") {
+      return res.status(404).send(err.message);
+    }
+
+    return res.status(404);
   }
+
+  return res.status(404);
 });
 
 module.exports = router;
